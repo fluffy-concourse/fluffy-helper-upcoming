@@ -1,0 +1,10 @@
+python-dotenv
+discord
+
+
+# Pillow is needed for image generation. Same goes for requests
+requests
+pillow
+
+# Flask is needed for the web api
+flask

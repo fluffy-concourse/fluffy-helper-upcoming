@@ -1,0 +1,24 @@
+# Other
+!
+.local
+
+_config/server
+_config/_/*.py
+
+assets/join_message_images/*.*
+assets/profile_pictures/*.*
+
+testing
+tools
+logs
+
+
+
+# VSCode ignore
+.vscode/
+
+# Byte-compiled / optimized / DLL files
+__pycache__
+
+# dotenv
+.env
