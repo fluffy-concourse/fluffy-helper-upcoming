@@ -64,7 +64,7 @@ class AFKReturn(commands.Cog):
                                 
                         ## Remove from database
                         conn = SemiData.userdata_conn
-                        conn.execute(f"DELETE FROM afk_users WHERE user_id = {afk_entry['user_id']}")
+                        conn.execute(f"DELETE FROM afk_users WHERE user_id = {afk_entry['user_id']} AND server_id={afk_entry['server_id']}")
                         conn.commit()
 
                         Globals.update_afk(self.bot.logger, msg.guild.id)

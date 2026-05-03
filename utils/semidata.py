@@ -190,9 +190,10 @@ class SemiData():
         for user in users_raw:
             result['users'].append({
                 'user_id': user[0],
-                'name': user[1],
-                'message': user[2],
-                'since': user[3]
+                'server_id': user[1],
+                'name': user[2],
+                'message': user[3],
+                'since': user[4]
             })
 
         return result

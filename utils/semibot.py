@@ -164,15 +164,15 @@ class Bot(AutoShardedBot):
             await ctx.reply(f"Argument missing or invaild duration. Duration Examples:\n5s-5 seconds\n5m-5 minutes\n5h-5 hours\n5d- 5 days\n\nMax duration is 28 days.")
             
         if err_handled == False:
-            print(f'Bot.log_a_thing("utils.semibot", {ctx.command.name}, {ctx.author.name}, {ctx.guild.id}, {error})')
-            await Bot.log_a_thing(self, "utils.semibot", ctx.command.name, ctx.author.name, ctx.guild.id, error)
+            if SemiBot.server_configured(ctx):
+                await Bot.log_a_thing(self, "utils.semibot", ctx.command.name, ctx.author.name, ctx.guild.id, error)
             await ctx.reply("An error occured with the command.")
             
     async def log_a_thing(self, file: str, command_name: str, author_name: str, guild_id: int, error):
         embed = SemiBot.error_embed(file, "error", f"{error}")
         
         guild = self.get_guild(guild_id)
-        logs_id = await SemiBot.get_channel_id_2(guild, "logs")
+        logs_id = await SemiBot.get_channel_id(guild, "bot_logs")
         logs = guild.get_channel(logs_id)
 
         date = datetime.now().strftime('%d-%m-%Y at %H-%M-%S')
@@ -188,7 +188,7 @@ class Bot(AutoShardedBot):
         embed = SemiBot.error_embed(file, "error", f"{error}")
         
         guild = self.get_guild(guild_id)
-        logs_id = await SemiBot.get_channel_id_2(guild, "logs")
+        logs_id = await SemiBot.get_channel_id(guild, "bot_logs")
         logs = guild.get_channel(logs_id)
 
         date = datetime.now().strftime('%d-%m-%Y at %H-%M-%S')
@@ -409,6 +409,13 @@ class SemiBot():
 
         return sorted_members.index(member) + 1
     
+    async def server_configured(ctx: Context):
+        server_config = SemiConfig.get_server_config(ctx.guild.id)
+
+        if server_config == None:
+            return False
+        return True
+    
     async def get_channel_id(ctx: Context, name: str):
         server_config = SemiConfig.get_server_config(ctx.guild.id)
 
@@ -426,19 +433,18 @@ class SemiBot():
         return None
 
     async def get_channel_id_2(guild: discord.Guild, name: str):
-        roles = SemiConfig.get_config("channel_ids")
-        id = 0
-        
-        try:
-            if roles[name]:
-                return roles[name]
-        except KeyError:
-            channel = guild.get_channel(1496529483346346115)
-            embed = SemiBot.error_embed("utils.semibot.get_channel_id()", "warning", f'"{name}" is not in the config for role ids.')
+        server_config = SemiConfig.get_server_config(guild.id)
 
-            await channel.send(embed=embed)
-
-        return id
+        if server_config == None:
+            pass
+        else:
+            try:
+                channel_ids = server_config['server_ids']
+                return channel_ids[name]
+            except KeyError as e:
+                pass
+                    
+        return None
     
     async def get_role_id(ctx: Context, name: str):
         server_config = SemiConfig.get_server_config(ctx.guild.id)
