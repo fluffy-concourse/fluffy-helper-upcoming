@@ -46,12 +46,6 @@ if good_to_go:
         case_insensitive=True
     )
 
-    # app.bot_instance = bot
-    
-    # t = threading.Thread(target=run_web)
-    # t.daemon = True
-    # t.start()
-
     try:
         bot.run(token)
     except Exception as e:

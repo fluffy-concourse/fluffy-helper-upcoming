@@ -2,6 +2,9 @@
 #
 # File: utils.semibot
 # Date: 22/04/2026 (EU)
+# Date Edited: 10/05/2026 (EU)
+# Purpose:
+#  
 # Author: snow2code
 #
 ###############################################
@@ -56,13 +59,10 @@ class Bot(AutoShardedBot):
         logger.addHandler(handler)
 
         self.logger = logger
-        self.shutting_down = False
-        # self.get_all_emojis() = self.emojis
 
 
     async def close(self):
         if self.is_ready():
-            self.shutting_down = True
             await super().close()
         
     async def setup_hook(self):
@@ -91,6 +91,8 @@ class Bot(AutoShardedBot):
                         listeners = listeners + 1
                         name = file[:-3]
                         await self.load_extension(f"listeners.{what}.{name}")
+        else:
+            print("Cannot find 'listeners' directory")
             
         ## Load command cogs
         if os.path.exists("cogs"):
@@ -115,25 +117,23 @@ class Bot(AutoShardedBot):
                                     commands = commands + 1
                                     name = file[:-3]
                                     await self.load_extension(f"cogs.{who}.{sub}.{name}")
+        else:
+            print("Cannot find 'cogs' directory.")
             
         print(f"Loaded {commands} command files.\nLoaded {listeners} listener files.")
     
-    # async def process_commands(self, msg: discord.Message):
-    #     ctx = await self.get_context(msg, cls=Context)
-    #     a = SemiConfig.get_config_wild("commands")
+    async def process_commands(self, msg: discord.Message):
+        ctx = await self.get_context(msg, cls=Context)
+
+        ## Put whatever here that isn't a prefix command you wish to use
+        # or something to run before processing a command
         
-    #     if msg.content.lower().find("&topic") == 0:
-    #         with open(files.get_filepath("commands", "json"), "r", encoding="utf8") as file:
-    #             data = json.load(file)
-    #             topics = data['topics']
-                
-    #             topic = random.choice(topics)
-
-    #             await ctx.send(f"{topic}?")
-    #     else:
-    #         await self.invoke(ctx)
+        # example:
+        # if msg.content.lower().find("&topic") >= 0:
 
 
+        await self.invoke(ctx)
+        pass
 
     @commands.Cog.listener()
     async def on_command_error(self, ctx: Context, error: commands.CommandError):
@@ -181,22 +181,6 @@ class Bot(AutoShardedBot):
             f.write(f"An error occured with {command_name} ran by {author_name} on {date}\n\nError: {error}")
             
         self.logger.warn(f"An error occured with {command_name} ran by {author_name} on {date} - {error}")
-        # await ctx.reply("An error occured with the command.")
-        await logs.send(embed=embed)
-
-    async def log_a_thing_2(self, file: str, author_name: str, guild_id: int, error):
-        embed = SemiBot.error_embed(file, "error", f"{error}")
-        
-        guild = self.get_guild(guild_id)
-        logs_id = await SemiBot.get_channel_id(guild, "bot_logs")
-        logs = guild.get_channel(logs_id)
-
-        date = datetime.now().strftime('%d-%m-%Y at %H-%M-%S')
-        
-        with open(f"logs/errors/{date}", "w") as f:
-            f.write(f"An error occured in {file} (triggered by {author_name}) on {date}\n\nError: {error}")
-            
-        self.logger.warn(f"An error occured in {file} (triggered by {author_name}) on {date} - {error}")
         await logs.send(embed=embed)
 
     async def on_connect(self):
@@ -208,7 +192,6 @@ class Bot(AutoShardedBot):
         except Exception as e:
             self.logger.error(msg=f"Error: {e}")
 
-    # def create_embed_notitle(self, title:str = "Embed Title", description: str = "Embed Description", color: discord.Color = discord.Color.dark_embed(), fields: [] = []):
     def create_embed_notitle(self, description: str = "Embed Description", color: discord.Color = discord.Color.dark_embed(), fields: list = [], use_by_snow2code_footer: bool = False):
         embed = discord.Embed(description=description, color=color)
         
@@ -241,6 +224,14 @@ class Bot(AutoShardedBot):
         if command_type == "bot_dev":
             if member.id == self.owner_id:
                 return True
+        elif command_type == "bot_dev__server_owner":
+            ## Bot owner
+            if member.id == self.owner_id:
+                return True
+            
+            ## Server Owner
+            if member.id == ctx.guild.owner_id:
+                return True
         elif command_type == "test":
             if member.id in config['testers']:
                 return True
@@ -269,82 +260,6 @@ class SemiBot():
                 color = discord.Color.red()
 
         return discord.Embed( title=f'{file} - {type}', description=message, color=color, timestamp=datetime.now(timezone.utc) )
-
-    async def moderate_user(bot: Bot, ctx: Context, user: discord.Member, moderation_type: str, args: list):
-        moderation_embed = bot.create_embed_notitle()
-        audit = ctx.guild.get_channel(await SemiBot.get_channel_id(ctx, "audit"))
-        isGud = False
-
-        
-        if moderation_type == "banish":
-            isGud = True
-            moderation_embed.title = f"Staff at {ctx.guild.name}"
-            moderation_embed.description = f"You've been banished in {ctx.guild.name} by {ctx.author.display_name}"
-            moderation_embed.description = moderation_embed.description + f"\n\nReason: {args[0]}\nPunisher: {ctx.author.name}"
-            
-            bot.logger.info(f"{ctx.author.name} banished {user.name}. Reason: {args[0]}")
-        elif moderation_type == "kick":
-            isGud = True
-            moderation_embed.title = f"Staff at {ctx.guild.name}"
-            moderation_embed.description = f"You've been kicked from {ctx.guild.name} by {ctx.author.display_name}"
-            moderation_embed.description = moderation_embed.description + f"\n\nReason: {args[0]}\nPunisher: {ctx.author.name}\n\n\nServer Invite: https://discord.gg/X8QqpeYgGF"
-            
-            bot.logger.info(f"{ctx.author.name} kicked {user.name}. Reason: {args[0]}")
-        elif moderation_type == "ban":
-            isGud = True
-            moderation_embed.title = f"Staff at {ctx.guild.name}"
-            moderation_embed.description = f"You've been banned from {ctx.guild.name} permanently by {ctx.author.display_name}"
-            moderation_embed.description = moderation_embed.description + f"\n\nReason: {args[0]}\nPunisher: {ctx.author.name}\n\n\nServer Invite: https://discord.gg/X8QqpeYgGF"
-            
-            bot.logger.info(f"{ctx.author.name} banned {user.name}. Reason: {args[0]}")
-        elif moderation_type == "mute":
-            isGud = True
-            moderation_embed.title = f"Staff at {ctx.guild.name}"
-            moderation_embed.description = f"You've been muted in {ctx.guild.name} by {ctx.author.display_name}"
-            moderation_embed.description = moderation_embed.description + f"\n\nReason: {args[0]}\nPunisher: {ctx.author.name}"
-            
-            bot.logger.info(f"{ctx.author.name} muted {user.name}. Reason: {args[0]}")
-        elif moderation_type == "unmute":
-            isGud = True
-            moderation_embed.title = f"Staff at {ctx.guild.name}"
-            moderation_embed.description = f"You've been unmuted in {ctx.guild.name} by {ctx.author.display_name}"
-            moderation_embed.description = moderation_embed.description + f"\n\nReason: {args[0]}\nPunisher: {ctx.author.name}"
-
-            bot.logger.info(f"{ctx.author.name} unmuted {user.name}. Reason: {args[0]}")
-        elif moderation_type == "message_banished_flagged":
-            # isGud = True
-            moderation_embed.description = f"**Message sent by {ctx.author.mention} in {ctx.channel.mention} was flagged**"
-            moderation_embed.description = moderation_embed.description + f"\n\nMessage: {ctx.content}\n"
-            moderation_embed.description = moderation_embed.description + f"Detected flagged word: {args[1]}\n"
-            moderation_embed.color = discord.Color.red()
-
-            moderation_embed.timestamp = datetime.utcnow()
-            moderation_embed.set_author(name=ctx.author.name, icon_url=ctx.author.avatar)
-            moderation_embed.set_footer(text=f"Author: {user.id} | Message ID: {ctx.id}")
-            
-            # await ctx.reply(f"{args[0]}")
-            await audit.send(embed=moderation_embed)
-
-            return
-        elif moderation_type == "message_banished":
-            # isGud = True
-            moderation_embed.description = f"**Message sent by {ctx.author.mention} in {ctx.channel.mention} was banished**"
-            moderation_embed.description = moderation_embed.description + f"\n\nMessage: {ctx.content}\n"
-            moderation_embed.description = moderation_embed.description + f"Detected banished word: {args[1]}\n"
-            moderation_embed.color = discord.Color.red()
-
-            moderation_embed.timestamp = datetime.utcnow()
-            moderation_embed.set_author(name=ctx.author.name, icon_url=ctx.author.avatar)
-            moderation_embed.set_footer(text=f"Author: {user.id} | Message ID: {ctx.id}")
-            
-            await ctx.reply(f"{args[0]}")
-            await audit.send(embed=moderation_embed)
-            bot.logger.info(f"\n{ctx.author.name}'s message was banished.\nMessage: {ctx.content}\nDetected word: {args[1]}")
-
-            return
-
-        if isGud:
-            await user.send(embed=moderation_embed)
 
     async def log_command(bot, author: discord.User, ctx: Context):
         # if SemiConfig.feature_enabled("command_used_log")
@@ -385,7 +300,7 @@ class SemiBot():
             if user.nick != None:
                 nick = user.nick
 
-        # 22/03/2026 (EU) - Prevent AFK status "stacking"
+        # 22/03/2026 (EU) snow2code: Prevent AFK status "stacking"
         if nick.find("[AFK] ") >= 0:
             nick = nick.replace("[AFK] ", "")
             
@@ -431,20 +346,6 @@ class SemiBot():
                 await ctx.channel.guild.owner.send(f'You need to configure your server *"{ctx.guild.name}"*\n\nSet ***ALL*** channels in the set_channel_id command. (like /set_channel_id audit #channel)\n\nThis was caused because {name} is not configured in the server.. orr because: {e}')
                     
         return None
-
-    async def get_channel_id_2(guild: discord.Guild, name: str):
-        server_config = SemiConfig.get_server_config(guild.id)
-
-        if server_config == None:
-            pass
-        else:
-            try:
-                channel_ids = server_config['server_ids']
-                return channel_ids[name]
-            except KeyError as e:
-                pass
-                    
-        return None
     
     async def get_role_id(ctx: Context, name: str):
         server_config = SemiConfig.get_server_config(ctx.guild.id)
@@ -477,18 +378,4 @@ class SemiBot():
                 return True
         except KeyError:
             return False
-        # commands = files.get_filepath("commands", "json")
-        # disabled = None
-
-        # with open(commands, "r", encoding="utf8") as file:
-        #     data = json.load(file)
-        #     disabled = data['disabled']
-
-        # if ctx.interaction == None:
-        #     if ctx.command.name in disabled:
-        #         return True
-        # else:
-        #     if ctx.interaction.command.name in disabled:
-        #         return True
-
-        # return False
+    

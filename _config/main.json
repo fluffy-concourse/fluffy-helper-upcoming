@@ -1,19 +1,14 @@
 {
-    "bot_version": "2.3.0",
+    "base_bot_version": "2.3.0",
 
     
     "prefix": "?",
-    "currency_name": "credits",
     "daily_reward": 400,
 
     "owners": [
-        1262124659814695005,
-        1267324371660177469
-    ],
-    "managers": [
-        888072934114074624
+        
     ],
     "testers": [
-        888072934114074624
+        
     ]
 }

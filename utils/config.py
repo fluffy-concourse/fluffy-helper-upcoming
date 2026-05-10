@@ -2,6 +2,9 @@
 #
 # File: utils.config
 # Date: 22/04/2026 (EU)
+# Date Edited: 10/05/2026 (EU)
+# Purpose:
+#  
 # Author: snow2code
 #
 ###############################################
@@ -30,24 +33,6 @@ def get_path(argpath):
 class SemiConfig():
     def __init__(self):
         self.lock = asyncio.Lock()
-
-    def in_radar_force(id: int, radar: str):
-        forced = SemiConfig.get_config_wild( "radar",   file_name="forced" )
-
-        try:
-            if forced[radar][id]:
-                return True
-        except KeyError:
-            return False
-
-    def in_radar_ignore(id: int, radar: str):
-        ignore = SemiConfig.get_config_wild( "radar",   file_name="ignore" )
-
-        try:
-            if ignore[radar][id]:
-                return True
-        except KeyError:
-            return False
 
     def feature_enabled(server_id: int, name: str):
         server_config = SemiConfig.get_server_config(server_id)
