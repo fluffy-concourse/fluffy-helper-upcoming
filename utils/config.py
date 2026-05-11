@@ -3,6 +3,7 @@
 # File: utils.config
 # Date: 22/04/2026 (EU)
 # Date Edited: 10/05/2026 (EU)
+# Project: Fluffy Concourse - Fluffy Helper Bot
 # Purpose:
 #  
 # Author: snow2code
@@ -15,6 +16,7 @@ import json
 import discord
 import asyncio
 from typing import Union
+from utils.semidata import SemiData
 
 def get_path(argpath):
     if len(argpath) > 0:
@@ -35,14 +37,14 @@ class SemiConfig():
         self.lock = asyncio.Lock()
 
     def feature_enabled(server_id: int, name: str):
-        server_config = SemiConfig.get_server_config(server_id)
+        conn = SemiData.server_config_conn
+        features = conn.execute(f"SELECT * FROM features WHERE server_id={server_id}").fetchall()
+        
+        for feature in features:
+            value = bool(feature[2])
+            if feature[1] == name:
+                return value
 
-        if server_config == None:
-            return False
-        else:
-            if name in server_config['features']:
-                return server_config['features'][name]
-                    
         return False
     
     def get_config(file_name: str):

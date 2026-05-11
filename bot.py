@@ -2,6 +2,10 @@
 #
 # File: bot
 # Date: 22/04/2026 (EU)
+# Date Edited: 10/05/2026 (EU)
+# Project: Fluffy Concourse - Fluffy Helper Bot
+# Purpose:
+#  
 # Author: snow2code
 #
 ###############################################
@@ -43,7 +47,8 @@ if good_to_go:
         ),
         intents=discord.Intents.all(),
         help_command = None,
-        case_insensitive=True
+        case_insensitive=True,
+        fetch_owner=True
     )
 
     try:

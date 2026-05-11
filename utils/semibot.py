@@ -3,6 +3,7 @@
 # File: utils.semibot
 # Date: 22/04/2026 (EU)
 # Date Edited: 10/05/2026 (EU)
+# Project: Fluffy Concourse - Fluffy Helper Bot
 # Purpose:
 #  
 # Author: snow2code
@@ -59,7 +60,6 @@ class Bot(AutoShardedBot):
         logger.addHandler(handler)
 
         self.logger = logger
-
 
     async def close(self):
         if self.is_ready():
@@ -135,38 +135,38 @@ class Bot(AutoShardedBot):
         await self.invoke(ctx)
         pass
 
-    @commands.Cog.listener()
-    async def on_command_error(self, ctx: Context, error: commands.CommandError):
-        err_handled = False
+    # @commands.Cog.listener()
+    # async def on_command_error(self, ctx: Context, error: commands.CommandError):
+    #     err_handled = False
 
-        if isinstance(error, commands.NoPrivateMessage):
-            err_handled = True
-            await ctx.reply("That command is only usable in a server.")
-        elif isinstance(error, commands.BadArgument):
-            err_handled = True
-            await ctx.reply("A argument for that command is invalid... give it another try")
-        elif isinstance(error, commands.MissingRequiredArgument):
-            err_handled = True
-            await ctx.reply("You *might* be missing a argument for that command... or something has gone terribly, *TERRIBLY* wrong.")
-        elif isinstance(error, commands.CommandNotFound):
-            err_handled = True
-            return
-
-
-        if not os.path.exists("logs/errors"):
-            os.makedirs("logs/errors")
+    #     if isinstance(error, commands.NoPrivateMessage):
+    #         err_handled = True
+    #         await ctx.reply("That command is only usable in a server.")
+    #     elif isinstance(error, commands.BadArgument):
+    #         err_handled = True
+    #         await ctx.reply("A argument for that command is invalid... give it another try")
+    #     elif isinstance(error, commands.MissingRequiredArgument):
+    #         err_handled = True
+    #         await ctx.reply("You *might* be missing a argument for that command... or something has gone terribly, *TERRIBLY* wrong.")
+    #     elif isinstance(error, commands.CommandNotFound):
+    #         err_handled = True
+    #         return
 
 
-        command_name = ctx.command.name
-        date = datetime.now().strftime('%d-%m-%Y at %H-%M-%S')
+    #     if not os.path.exists("logs/errors"):
+    #         os.makedirs("logs/errors")
 
-        if command_name == "mute":
-            await ctx.reply(f"Argument missing or invaild duration. Duration Examples:\n5s-5 seconds\n5m-5 minutes\n5h-5 hours\n5d- 5 days\n\nMax duration is 28 days.")
+
+    #     command_name = ctx.command.name
+    #     date = datetime.now().strftime('%d-%m-%Y at %H-%M-%S')
+
+    #     if command_name == "mute":
+    #         await ctx.reply(f"Argument missing or invaild duration. Duration Examples:\n5s-5 seconds\n5m-5 minutes\n5h-5 hours\n5d- 5 days\n\nMax duration is 28 days.")
             
-        if err_handled == False:
-            if SemiBot.server_configured(ctx):
-                await Bot.log_a_thing(self, "utils.semibot", ctx.command.name, ctx.author.name, ctx.guild.id, error)
-            await ctx.reply("An error occured with the command.")
+    #     if err_handled == False:
+    #         # if SemiBot.server_configured(ctx):
+    #         #     await Bot.log_a_thing(self, "utils.semibot", ctx.command.name, ctx.author.name, ctx.guild.id, error)
+    #         await ctx.reply("An error occured with the command.")
             
     async def log_a_thing(self, file: str, command_name: str, author_name: str, guild_id: int, error):
         embed = SemiBot.error_embed(file, "error", f"{error}")
@@ -222,8 +222,12 @@ class Bot(AutoShardedBot):
         member: discord.Member = ctx.author
         
         if command_type == "bot_dev":
-            if member.id == self.owner_id:
-                return True
+            info: discord.AppInfo = await self.application_info()
+
+            # print(await self.is_owner(ctx.author))
+            # if member.id == self.owner_id:
+            #     return True
+            return await self.is_owner(ctx.author)
         elif command_type == "bot_dev__server_owner":
             ## Bot owner
             if member.id == self.owner_id:
@@ -262,36 +266,36 @@ class SemiBot():
         return discord.Embed( title=f'{file} - {type}', description=message, color=color, timestamp=datetime.now(timezone.utc) )
 
     async def log_command(bot, author: discord.User, ctx: Context):
-        # if SemiConfig.feature_enabled("command_used_log")
+        if SemiConfig.feature_enabled(ctx.guild.id, "command_used_log"):
+            logged_commands = SemiConfig.get_config_wild("commands", file_name="logged")
+            message_content = ctx.message.content
+            interaction = ctx.interaction
 
-        logged_commands = SemiConfig.get_config_wild(commands, file_name="logged")
-        message_content = ctx.message.content
-        interaction = ctx.interaction
+            if interaction == None:
+                bot.logger.info(msg=f"{author} in '{ctx.guild.name}': {message_content}")
+            else:
+                content = f"/{interaction.command.name}"
 
-        if interaction == None:
-            bot.logger.info(msg=f"{author}: {message_content}")
-        else:
-            content = f"/{interaction.command.name}"
+                if len(interaction.command.parameters) > 0:
+                    if "options" in interaction.data:
+                        for option in interaction.data["options"]:
+                            content = f"{content} {option['name']}: {option['value']}"
+                            # content = f"{content} {option['value']}"
+                    
+                bot.logger.info(msg=f"{interaction.user.name} in '{ctx.guild.name}': {content}")
+                if interaction.command.name in logged_commands:
+                    audit = ctx.guild.get_channel(await SemiBot.get_channel_id(ctx, "audit"))
+                    moderation_embed = bot.create_embed_notitle()
 
-            if len(interaction.command.parameters) > 0:
-                for option in interaction.data["options"]:
-                    content = f"{content} {option['name']}: {option['value']}"
-                    # content = f"{content} {option['value']}"
-                
-            bot.logger.info(msg=f"{interaction.user.name}: {content}")
-            if interaction.command.name in logged_commands:
-                audit = ctx.guild.get_channel(await SemiBot.get_channel_id(ctx, "audit"))
-                moderation_embed = bot.create_embed_notitle()
+                    moderation_embed.description = f"Used `{interaction.command.name}` command in <#{ctx.channel.id}>"
+                    moderation_embed.description = f"{moderation_embed.description}\n{content}"
+                    moderation_embed.color = discord.Color.blue()
 
-                moderation_embed.description = f"Used `{interaction.command.name}` command in <#{ctx.channel.id}>"
-                moderation_embed.description = f"{moderation_embed.description}\n{content}"
-                moderation_embed.color = discord.Color.blue()
+                    moderation_embed.timestamp = datetime.utcnow()
+                    moderation_embed.set_author(name=ctx.author.name, icon_url=ctx.author.avatar)
 
-                moderation_embed.timestamp = datetime.utcnow()
-                moderation_embed.set_author(name=ctx.author.name, icon_url=ctx.author.avatar)
-
-                await audit.send(embed=moderation_embed)
-                # moderation_embed.set_footer(text=f"Bot developed by snow2code")
+                    await audit.send(embed=moderation_embed)
+                    # moderation_embed.set_footer(text=f"Bot developed by snow2code")
 
     def get_user_nick(user: Union[discord.User, discord.Member]):
         nick = user.display_name

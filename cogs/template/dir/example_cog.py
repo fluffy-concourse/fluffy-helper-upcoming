@@ -3,6 +3,7 @@
 # File: cogs.template.dir.example_cog
 # Date: 04/05/2026 (EU)
 # Date Edited: 10/05/2026 (EU)
+# Project: Fluffy Concourse - Fluffy Helper Bot
 # Purpose:
 #  
 # Author: snow2code
