@@ -1,24 +1,28 @@
-# Other
-!
-.local
+# Consider what files Git should commit.
 
-_config/server
+# If YOUR .env file gets out there.. you're quite likly fucked...
+#  It has your bots token. which can be used to log in on a bot client
+#  and they can fuck up your server(s).
+.env
+
+# Non-necessary config files
 _config/_/*.py
 
-assets/join_message_images/*.*
-assets/profile_pictures/*.*
+# Non-necessary other files
+assets/boost_images
+assets/join_message_images
+assets/profile_pictures
 
+data
 testing
-tools
 logs
 
-
+# These are for Hosting service that snow2code uses.
+.local
+.cache
 
 # VSCode ignore
-.vscode/
+.vscode
 
 # Byte-compiled / optimized / DLL files
 __pycache__
-
-# dotenv
-.env
